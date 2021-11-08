@@ -27,4 +27,4 @@ jobs:
     - name: Pack
       run: dotnet pack src -c Release -o ./artifacts/bin
     - name: Publish
-      run: dotnet nuget push ./artifacts/bin/*.nupkg --api-key "$SUPER_SECRET" --source https://api.nuget.org/v3/index.json
+      run: dotnet nuget push ./artifacts/bin/*.nupkg --api-key "$APIKEY" --source https://api.nuget.org/v3/index.json
