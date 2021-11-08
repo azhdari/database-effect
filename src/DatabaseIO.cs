@@ -8,10 +8,10 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 public interface DatabaseIO
 {
-    Aff<EntityEntry> Add(object entity);
-    Aff<EntityEntry<TEntity>> Add<TEntity>(TEntity entity) where TEntity : class;
-    Aff<Unit> AddRange(Lst<object> entities);
-    Aff<Unit> AddRange(params object[] entities);
+    Aff<EntityEntry> Add(object entity, CancellationToken token = default);
+    Aff<EntityEntry<TEntity>> Add<TEntity>(TEntity entity, CancellationToken token = default) where TEntity : class;
+    Aff<Unit> AddRange(Lst<object> entities, CancellationToken token = default);
+    Aff<Unit> AddRange(object[] entities, CancellationToken token = default);
 
     Eff<EntityEntry> Update(object entity);
     Eff<EntityEntry<TEntity>> Update<TEntity>(TEntity entity) where TEntity : class;
@@ -26,8 +26,8 @@ public interface DatabaseIO
     Eff<EntityEntry> Entry(object entity);
     Eff<EntityEntry<TEntity>> Entry<TEntity>(TEntity entity) where TEntity : class;
 
-    Aff<Option<TEntity>> Find<TEntity>(params object[] keyValues) where TEntity : class;
-    Aff<Option<object>> Find(Type entityType, params object[] keyValues);
+    Aff<Option<TEntity>> Find<TEntity>(object[] keyValues, CancellationToken token = default) where TEntity : class;
+    Aff<Option<object>> Find(Type entityType, object[] keyValues, CancellationToken token = default);
 
     Eff<IQueryable<TResult>> FromExpression<TResult>(Expression<Func<IQueryable<TResult>>> expression);
 
@@ -36,8 +36,8 @@ public interface DatabaseIO
     Eff<Unit> RemoveRange(params object[] entities);
     Eff<Unit> RemoveRange(Lst<object> entities);
 
-    Aff<Unit> SaveChanges(bool acceptAllChangesOnSuccess);
-    Aff<Unit> SaveChanges();
+    Aff<Unit> SaveChanges(bool acceptAllChangesOnSuccess, CancellationToken token = default);
+    Aff<Unit> SaveChanges(CancellationToken token = default);
 
     Eff<DbSet<TEntity>> Set<TEntity>(string name) where TEntity : class;
     Eff<DbSet<TEntity>> Set<TEntity>() where TEntity : class;

@@ -18,20 +18,20 @@ public class DatabaseLive : DatabaseIO
     }
 
     // Add
-    public Aff<EntityEntry> Add(object entity)
+    public Aff<EntityEntry> Add(object entity, CancellationToken token = default)
       =>
-      _dbContext.AddAsync(entity).ToAff();
+      _dbContext.AddAsync(entity, token).ToAff();
 
-    public Aff<EntityEntry<TEntity>> Add<TEntity>(TEntity entity)
+    public Aff<EntityEntry<TEntity>> Add<TEntity>(TEntity entity, CancellationToken token = default)
         where TEntity : class
         =>
-        _dbContext.AddAsync<TEntity>(entity).ToAff();
+        _dbContext.AddAsync<TEntity>(entity, token).ToAff();
 
-    public Aff<Unit> AddRange(Lst<object> entities)
-        => _dbContext.AddRangeAsync(entities).ToUnit().ToAff();
+    public Aff<Unit> AddRange(Lst<object> entities, CancellationToken token = default)
+        => _dbContext.AddRangeAsync(entities, token).ToUnit().ToAff();
 
-    public Aff<Unit> AddRange(params object[] entities)
-        => _dbContext.AddRangeAsync(entities).ToUnit().ToAff();
+    public Aff<Unit> AddRange(object[] entities, CancellationToken token = default)
+        => _dbContext.AddRangeAsync(entities, token).ToUnit().ToAff();
 
     // Update
     public Eff<EntityEntry> Update(object entity)
@@ -43,7 +43,7 @@ public class DatabaseLive : DatabaseIO
         =>
         SuccessEff(_dbContext.Update(entity));
 
-    public Eff<Unit> UpdateRange(params object[] entities) {
+    public Eff<Unit> UpdateRange(object[] entities) {
         _dbContext.UpdateRange(entities);
         return unitEff;
     }
@@ -61,7 +61,7 @@ public class DatabaseLive : DatabaseIO
     public Eff<EntityEntry> Attach(object entity)
         => SuccessEff(_dbContext.Attach(entity));
 
-    public Eff<Unit> AttachRange(params object[] entities) {
+    public Eff<Unit> AttachRange(object[] entities) {
         _dbContext.AttachRange(entities);
         return unitEff;
     }
@@ -80,17 +80,17 @@ public class DatabaseLive : DatabaseIO
         => SuccessEff(_dbContext.Entry(entity));
 
     // Find
-    public Aff<Option<TEntity>> Find<TEntity>(object[] keyValues)
+    public Aff<Option<TEntity>> Find<TEntity>(object[] keyValues, CancellationToken token = default)
         where TEntity : class
         =>
         #pragma warning disable CS8622
-        _dbContext.FindAsync<TEntity>(keyValues).ToAff().Map(Optional<TEntity>); 
+        _dbContext.FindAsync<TEntity>(keyValues, token).ToAff().Map(Optional<TEntity>); 
         #pragma warning restore CS8622
 
-    public Aff<Option<object>> Find(Type entityType, object[] keyValues)
+    public Aff<Option<object>> Find(Type entityType, object[] keyValues, CancellationToken token = default)
         =>
         #pragma warning disable CS8622
-        _dbContext.FindAsync(entityType, keyValues).ToAff().Map(Optional<object>);
+        _dbContext.FindAsync(entityType, keyValues, token).ToAff().Map(Optional<object>);
         #pragma warning restore CS8622
 
     // Expression
@@ -106,7 +106,7 @@ public class DatabaseLive : DatabaseIO
         =>
         SuccessEff(_dbContext.Remove(entity));
 
-    public Eff<Unit> RemoveRange(params object[] entities) {
+    public Eff<Unit> RemoveRange(object[] entities) {
         _dbContext.RemoveRange(entities);
         return unitEff;
     }
@@ -117,15 +117,15 @@ public class DatabaseLive : DatabaseIO
     }
 
     // SaveChanges
-    public Aff<Unit> SaveChanges(bool acceptAllChangesOnSuccess)
+    public Aff<Unit> SaveChanges(bool acceptAllChangesOnSuccess, CancellationToken token = default)
         =>
-        _dbContext.SaveChangesAsync(acceptAllChangesOnSuccess)
+        _dbContext.SaveChangesAsync(acceptAllChangesOnSuccess, token)
                   .ToUnit()
                   .ToAff();
 
-    public Aff<Unit> SaveChanges()
+    public Aff<Unit> SaveChanges(CancellationToken token = default)
         =>
-        _dbContext.SaveChangesAsync()
+        _dbContext.SaveChangesAsync(token)
                   .ToUnit()
                   .ToAff();
 

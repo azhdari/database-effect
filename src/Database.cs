@@ -13,22 +13,22 @@ public static class Database<R>
               HasCancel<R>
 {
     // Add
-    public static Aff<R, EntityEntry> Add(object entity)
+    public static Aff<R, EntityEntry> Add(object entity, CancellationToken token = default)
         =>
-        default(R).Database.Bind(rt => rt.Add(entity));
+        default(R).Database.Bind(rt => rt.Add(entity, token));
 
-    public static Aff<R, EntityEntry<TEntity>> Add<TEntity>(TEntity entity)
+    public static Aff<R, EntityEntry<TEntity>> Add<TEntity>(TEntity entity, CancellationToken token = default)
         where TEntity : class
         =>
-        default(R).Database.Bind(rt => rt.Add(entity));
+        default(R).Database.Bind(rt => rt.Add(entity, token));
 
-    public static Aff<R, Unit> AddRange(Lst<object> entities)
+    public static Aff<R, Unit> AddRange(Lst<object> entities, CancellationToken token = default)
         =>
-        default(R).Database.Bind(rt => rt.AddRange(entities));
+        default(R).Database.Bind(rt => rt.AddRange(entities, token));
 
-    public static Aff<R, Unit> AddRange(params object[] entities)
+    public static Aff<R, Unit> AddRange(CancellationToken token = default, params object[] entities)
         =>
-        default(R).Database.Bind(rt => rt.AddRange(entities));
+        default(R).Database.Bind(rt => rt.AddRange(entities, token));
     
     // Update
     public static Aff<R, EntityEntry> Update(object entity)
@@ -75,16 +75,21 @@ public static class Database<R>
         where TEntity : class
         =>
         default(R).Database.Bind(rt => rt.Entry(entity));
-    
+
     // Find
-    public static Aff<R, Option<TEntity>> Find<TEntity>(params object[] keyValues)
+    public static Aff<R, Option<TEntity>> Find<TEntity>(object keyValue, CancellationToken token = default)
         where TEntity : class
         =>
-        default(R).Database.Bind(rt => rt.Find<TEntity>(keyValues));
-    
-    public static Aff<R, Option<object>> Find(Type entityType, params object[] keyValues)
+        default(R).Database.Bind(rt => rt.Find<TEntity>(new[] { keyValue }, token));
+
+    public static Aff<R, Option<TEntity>> Find<TEntity>(CancellationToken token = default, params object[] keyValues)
+        where TEntity : class
         =>
-        default(R).Database.Bind(rt => rt.Find(entityType, keyValues));
+        default(R).Database.Bind(rt => rt.Find<TEntity>(keyValues, token));
+    
+    public static Aff<R, Option<object>> Find(Type entityType, CancellationToken token = default, params object[] keyValues)
+        =>
+        default(R).Database.Bind(rt => rt.Find(entityType, keyValues, token));
     
     // Expression
     public static Aff<R, IQueryable<TResult>> FromExpression<TResult>(Expression<Func<IQueryable<TResult>>> expression)
@@ -110,13 +115,13 @@ public static class Database<R>
         default(R).Database.Bind(rt => rt.RemoveRange(entities));
     
     // SaveChange
-    public static Aff<R, Unit> SaveChanges(bool acceptAllChangesOnSuccess)
+    public static Aff<R, Unit> SaveChanges(bool acceptAllChangesOnSuccess, CancellationToken token = default)
         =>
-        default(R).Database.Bind(rt => rt.SaveChanges(acceptAllChangesOnSuccess));
+        default(R).Database.Bind(rt => rt.SaveChanges(acceptAllChangesOnSuccess, token));
     
-    public static Aff<R, Unit> SaveChanges()
+    public static Aff<R, Unit> SaveChanges(CancellationToken token = default)
         =>
-        default(R).Database.Bind(rt => rt.SaveChanges());
+        default(R).Database.Bind(rt => rt.SaveChanges(token));
     
     // Query
     public static Aff<R, ITable<TEntity>> Table<TEntity>(string name)
