@@ -21,11 +21,9 @@ jobs:
       with:
         dotnet-version: 6.0.100-rc.2.21505.57
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore src
     - name: Build
-      run: dotnet build --no-restore
-    - name: Test
-      run: dotnet test --no-build --verbosity normal
+      run: dotnet build src --no-restore
     - name: Pack
       run: dotnet pack src -c Release -o ./artifacts/bin
     - name: Publish
