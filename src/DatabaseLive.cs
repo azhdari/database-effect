@@ -1,4 +1,4 @@
-namespace LanguageExt.Effects.Live;
+namespace LanguageExt.Effects.Database;
 
 using System.Linq;
 using System.Linq.Expressions;

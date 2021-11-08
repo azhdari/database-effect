@@ -1,7 +1,7 @@
+namespace LanguageExt.Effects.Database;
+
 using System.Data.Common;
 using Microsoft.EntityFrameworkCore;
-
-namespace LanguageExt.Effects.Database;
 
 public record class StoredProcQuery(string Name, DbContext Context)
 {

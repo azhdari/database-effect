@@ -8,13 +8,11 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
-using static LanguageExt.Prelude;
-
-internal static class StoredProcExtensions
+public static class StoredProcExtensions
 {
     public static StoredProcQuery WithParam(this StoredProcQuery query,
                                             string name,
-                                            object value,
+                                            Option<object> value,
                                             ParameterDirection direction = ParameterDirection.Input,
                                             DbType? dbType = null,
                                             int size = 0)
@@ -82,7 +80,7 @@ internal static class StoredProcExtensions
 
     private static DbParameter CreateParameter(DbCommand cmd,
                                                string name,
-                                               object? value,
+                                               Option<object> value,
                                                ParameterDirection direction = ParameterDirection.Input,
                                                DbType? dbType = null,
                                                int size = 0)
@@ -94,7 +92,7 @@ internal static class StoredProcExtensions
 
         if (direction == ParameterDirection.Input || direction == ParameterDirection.InputOutput)
         {
-            parameter.Value = value ?? DBNull.Value;
+            parameter.Value = value.IfNone(DBNull.Value);
         }
 
         if (dbType.HasValue)

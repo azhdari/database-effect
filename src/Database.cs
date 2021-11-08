@@ -77,12 +77,12 @@ public static class Database<R>
         default(R).Database.Bind(rt => rt.Entry(entity));
     
     // Find
-    public static Aff<R, Option<TEntity>> Find<TEntity>(object[] keyValues)
+    public static Aff<R, Option<TEntity>> Find<TEntity>(params object[] keyValues)
         where TEntity : class
         =>
         default(R).Database.Bind(rt => rt.Find<TEntity>(keyValues));
     
-    public static Aff<R, Option<object>> Find(Type entityType, object[] keyValues)
+    public static Aff<R, Option<object>> Find(Type entityType, params object[] keyValues)
         =>
         default(R).Database.Bind(rt => rt.Find(entityType, keyValues));
     

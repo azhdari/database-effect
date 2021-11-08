@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <PackageVersion>1.0.0-preview1</PackageVersion>
+    <PackageVersion>1.0.0-preview2</PackageVersion>
     <PackageId>LanguageExt.Effects.Database</PackageId>
     <Title>LanguageExt.Effects.Database</Title>
     <Authors>Mohammad Azhdari</Authors>
@@ -13,7 +13,7 @@
     <PackageProjectUrl>https://github.com/azhdari/database-effect</PackageProjectUrl>
     <License>./LICENSE</License>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
-    <OutputType>library</OutputType>
+    <OutputType>Library</OutputType>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <FileVersion>1.0.0.0</FileVersion>
     <LangVersion>default</LangVersion>
@@ -33,6 +33,16 @@
       <Pack>True</Pack>
       <PackagePath></PackagePath>
     </None>
+    <None Include="README.md" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="**\*.cs" />
+    <EmbeddedResource Include="**\*.resx" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="obj\**" />
+    <EmbeddedResource Remove="obj\**" />
+    <None Remove="obj\**" />
+  </ItemGroup>
 </Project>
