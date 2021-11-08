@@ -10,9 +10,6 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-    
-    env:
-      APIKEY: ${{ secrets.NUGET_API_KEY }}
 
     steps:
     - uses: actions/checkout@v2
@@ -26,5 +23,19 @@ jobs:
       run: dotnet build src --no-restore
     - name: Pack
       run: dotnet pack src -c Release -o ./artifacts/bin
-    - name: Publish
+
+  deploy:
+
+    runs-on: ubuntu-latest
+
+    env:
+      APIKEY: ${{ secrets.NUGET_API_KEY }}
+
+    environment:
+      name: Deploy
+
+    steps:
+    - name: Nuget
       run: dotnet nuget push ./artifacts/bin/*.nupkg --api-key "$APIKEY" --source https://api.nuget.org/v3/index.json
+
+
