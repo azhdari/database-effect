@@ -31,9 +31,6 @@ jobs:
     env:
       APIKEY: ${{ secrets.NUGET_API_KEY }}
 
-    environment:
-      name: Deploy
-
     steps:
     - name: Nuget
       run: dotnet nuget push ./artifacts/bin/*.nupkg --api-key "$APIKEY" --source https://api.nuget.org/v3/index.json
