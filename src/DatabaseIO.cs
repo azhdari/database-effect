@@ -8,15 +8,13 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 public interface DatabaseIO
 {
-    Aff<EntityEntry> Add(object entity, CancellationToken token = default);
-    Aff<EntityEntry<TEntity>> Add<TEntity>(TEntity entity, CancellationToken token = default) where TEntity : class;
-    Aff<Unit> AddRange(Lst<object> entities, CancellationToken token = default);
-    Aff<Unit> AddRange(object[] entities, CancellationToken token = default);
+    DbContext DbContext { get; }
 
-    Eff<EntityEntry> Update(object entity);
+    Aff<EntityEntry<TEntity>> Add<TEntity>(TEntity entity, CancellationToken token = default) where TEntity : class;
+    Aff<Unit> AddRange<TEntity>(Lst<TEntity> entities, CancellationToken token = default) where TEntity : class;
+
     Eff<EntityEntry<TEntity>> Update<TEntity>(TEntity entity) where TEntity : class;
-    Eff<Unit> UpdateRange(params object[] entities);
-    Eff<Unit> UpdateRange(Lst<object> entities);
+    Eff<Unit> UpdateRange<TEntity>(Lst<TEntity> entities) where TEntity : class;
 
     Eff<EntityEntry<TEntity>> Attach<TEntity>(TEntity entity) where TEntity : class;
     Eff<EntityEntry> Attach(object entity);
@@ -45,4 +43,6 @@ public interface DatabaseIO
     Eff<ITable<TEntity>> Table<TEntity>() where TEntity : class;
 
     Aff<A> StoredProc<A>(string storedProcName, Func<StoredProcQuery, Aff<A>> builder, bool prependDefaultSchema = true);
+
+    Eff<IQueryable<A>> Cte<TEntity, A>(Func<ITable<TEntity>, IQueryable<A>> builder, Option<string> name) where TEntity : class;
 }

@@ -17,38 +17,27 @@ public class DatabaseLive : DatabaseIO
         _dbContext = dbContext;
     }
 
-    // Add
-    public Aff<EntityEntry> Add(object entity, CancellationToken token = default)
-      =>
-      _dbContext.AddAsync(entity, token).ToAff();
+    public DbContext DbContext => _dbContext;
 
+    // Add
     public Aff<EntityEntry<TEntity>> Add<TEntity>(TEntity entity, CancellationToken token = default)
         where TEntity : class
         =>
         _dbContext.AddAsync<TEntity>(entity, token).ToAff();
 
-    public Aff<Unit> AddRange(Lst<object> entities, CancellationToken token = default)
-        => _dbContext.AddRangeAsync(entities, token).ToUnit().ToAff();
-
-    public Aff<Unit> AddRange(object[] entities, CancellationToken token = default)
-        => _dbContext.AddRangeAsync(entities, token).ToUnit().ToAff();
+    public Aff<Unit> AddRange<TEntity>(Lst<TEntity> entities, CancellationToken token = default)
+        where TEntity : class
+        =>
+        _dbContext.AddRangeAsync(entities, token).ToUnit().ToAff();
 
     // Update
-    public Eff<EntityEntry> Update(object entity)
-        =>
-        SuccessEff(_dbContext.Update(entity));
-
     public Eff<EntityEntry<TEntity>> Update<TEntity>(TEntity entity)
         where TEntity : class
         =>
         SuccessEff(_dbContext.Update(entity));
 
-    public Eff<Unit> UpdateRange(object[] entities) {
-        _dbContext.UpdateRange(entities);
-        return unitEff;
-    }
-
-    public Eff<Unit> UpdateRange(Lst<object> entities) {
+    public Eff<Unit> UpdateRange<TEntity>(Lst<TEntity> entities)
+        where TEntity : class {
         _dbContext.UpdateRange(entities);
         return unitEff;
     }
@@ -162,4 +151,11 @@ public class DatabaseLive : DatabaseIO
                   .IfNone(storedProcName)
                   .Apply(spName => new StoredProcQuery(spName, _dbContext))
                   .Apply(builder);
+
+    public Eff<IQueryable<A>> Cte<TEntity, A>(Func<ITable<TEntity>, IQueryable<A>> builder, Option<string> name)
+        where TEntity : class
+        =>
+        builder(_dbContext.Set<TEntity>().ToLinqToDBTable())
+            .AsCte(name.ToNullable())
+            .Apply(SuccessEff);
 }

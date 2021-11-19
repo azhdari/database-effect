@@ -1,50 +1,41 @@
 namespace LanguageExt.Effects.Traits;
 
+using System;
 using System.Linq;
 using System.Linq.Expressions;
 using LanguageExt.Effects.Database;
 using LinqToDB;
+using LinqToDB.Extensions;
+using LinqToDB.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using LinqToDB.Linq;
 
 public static class Database<R>
     where R : struct,
               HasDatabase<R>,
               HasCancel<R>
 {
+    // -------------------------------------- Ef Core
     // Add
-    public static Aff<R, EntityEntry> Add(object entity, CancellationToken token = default)
-        =>
-        default(R).Database.Bind(rt => rt.Add(entity, token));
-
     public static Aff<R, EntityEntry<TEntity>> Add<TEntity>(TEntity entity, CancellationToken token = default)
         where TEntity : class
         =>
         default(R).Database.Bind(rt => rt.Add(entity, token));
 
-    public static Aff<R, Unit> AddRange(Lst<object> entities, CancellationToken token = default)
+    public static Aff<R, Unit> AddRange<TEntity>(Lst<TEntity> entities, CancellationToken token = default)
+        where TEntity : class
         =>
         default(R).Database.Bind(rt => rt.AddRange(entities, token));
 
-    public static Aff<R, Unit> AddRange(CancellationToken token = default, params object[] entities)
-        =>
-        default(R).Database.Bind(rt => rt.AddRange(entities, token));
-    
     // Update
-    public static Aff<R, EntityEntry> Update(object entity)
-        =>
-        default(R).Database.Bind(rt => rt.Update(entity));
-    
     public static Aff<R, EntityEntry<TEntity>> Update<TEntity>(TEntity entity)
         where TEntity : class
         =>
         default(R).Database.Bind(rt => rt.Update(entity));
     
-    public static Aff<R, Unit> UpdateRange(params object[] entities)
-        =>
-        default(R).Database.Bind(rt => rt.UpdateRange());
-    
-    public static Aff<R, Unit> UpdateRange(Lst<object> entities)
+    public static Aff<R, Unit> UpdateRange<TEntity>(Lst<TEntity> entities)
+        where TEntity : class
         =>
         default(R).Database.Bind(rt => rt.UpdateRange(entities));
 
@@ -124,16 +115,6 @@ public static class Database<R>
         default(R).Database.Bind(rt => rt.SaveChanges(token));
     
     // Query
-    public static Aff<R, ITable<TEntity>> Table<TEntity>(string name)
-        where TEntity : class
-        =>
-        default(R).Database.Bind(rt => rt.Table<TEntity>(name));
-
-    public static Aff<R, ITable<TEntity>> Table<TEntity>()
-        where TEntity : class
-        =>
-        default(R).Database.Bind(rt => rt.Table<TEntity>());
-
     public static Aff<R, DbSet<TEntity>> Set<TEntity>(string name)
         where TEntity : class
         =>
@@ -148,4 +129,54 @@ public static class Database<R>
     public static Aff<R, A> StoredProc<A>(string command, Func<StoredProcQuery, Aff<A>> builder, bool prependDefaultSchema = true)
         =>
         default(R).Database.Bind(rt => rt.StoredProc(command, builder, prependDefaultSchema));
+
+    // -------------------------------------- Linq2Db
+
+    // Query
+    public static Aff<R, ITable<TEntity>> Table<TEntity>(Option<string> name = default)
+        where TEntity : class
+        =>
+        default(R).Database.Bind(rt => name.Match(
+            Some: n => rt.Table<TEntity>(n),
+            None: () => rt.Table<TEntity>()
+            ));
+
+    // CTE
+    public static Aff<R, IQueryable<A>> Cte<TEntity, A>(Func<ITable<TEntity>, IQueryable<A>> builder, Option<string> name)
+        where TEntity : class
+        =>
+        default(R).Database.Bind(rt => rt.Cte(builder, name));
+
+    public static Aff<R, IQueryable<A>> Cte<TEntity, A>(Func<ITable<TEntity>, IQueryable<A>> builder)
+        where TEntity : class
+        =>
+        Cte(builder, Option<string>.None);
+
+    // Add
+    public static Aff<R, TId> Insert<TEntity, TId>(TEntity entity, CancellationToken token = default)
+        where TEntity : class, IEntity<TId>
+        =>
+        default(R).Database.Bind(rt => rt.Table<TEntity>())
+                           .Map(table => table.DataContext)
+                           .Bind(dtx => dtx.InsertWithIdentityAsync(entity, token: token)
+                                           .ToAff()
+                                           .Map(idO => dtx.MappingSchema.ChangeTypeTo<TId>(idO)));
+
+    // Update
+    public static Aff<R, Unit> Update<TEntity>(Func<ITable<TEntity>, IUpdatable<TEntity>> updater, CancellationToken token = default)
+        where TEntity : class
+        =>
+        default(R).Database.Bind(rt => rt.Table<TEntity>())
+                           .Bind(table => updater(table).UpdateAsync(token)
+                                                        .ToUnit()
+                                                        .ToAff());
+
+    // Find
+    public static Aff<R, Option<TEntity>> Find<TEntity>(Func<ITable<TEntity>, IQueryable<TEntity>> queryBuilder, CancellationToken token = default)
+        where TEntity : class
+        =>
+        default(R).Database.Bind(rt => rt.Table<TEntity>())
+                           .Bind(table => queryBuilder(table).FirstOrDefaultAsyncLinqToDB()
+                                                             .Map(Optional<TEntity>)
+                                                             .ToAff());
 }
