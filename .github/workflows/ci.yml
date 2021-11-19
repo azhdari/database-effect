@@ -39,6 +39,7 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: dist
+        path: ./artifacts/bin
     - name: Nuget
       run: dotnet nuget push ./artifacts/bin/*.nupkg --api-key "$APIKEY" --source https://api.nuget.org/v3/index.json
 
