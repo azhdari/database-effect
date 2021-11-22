@@ -5,11 +5,10 @@
 !Note:
 *Currently DatabaseEff only supports .net6* .   
 !Note:
-*This is absolutely a new project, so use it carefully* .  
+*This project is under heavy development at this stage, so everything is subject to change!*
 
 ## Dependencies
-This library depends on both `EfCore 6` and `Linq2Db` (Linq2Db for EfCore).  
-Eventually I'll pick one of these, but for now, I experiment both.
+This library depends on `Linq2db` ([github repo](https://github.com/linq2db/linq2db)).
 
 ---
 
@@ -21,9 +20,20 @@ dotnet add package LanguageExt.Effects.Database
 ```
 Use the `--prerelease` option to install latest preview version.
 
+### Approach A. Global connection
 Add this line to your project's startup file:
 ```csharp
-services.AddLinq2DbForDatabaseEff();
+services.AddDatabaseEff(Configuration, "ConnectionStringName");
+```
+
+### Approach B. Configure Multiple DataContext
+You can use `OptionBuilder` to configure multiple `DataContext`:
+```csharp
+var fooOptionBuilder = services.GetDatabaseBuildOptions(Configuration, "FooConnectionString");
+builder.Services.AddLinqToDbContext<FooDbContext>(options);
+
+var barOptionBuilder = services.GetDatabaseBuildOptions(Configuration, "BarConnectionString");
+builder.Services.AddLinqToDbContext<BarDbContext>(options);
 ```
 
 ---

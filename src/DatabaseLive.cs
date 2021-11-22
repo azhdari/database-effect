@@ -5,157 +5,106 @@ using System.Linq.Expressions;
 using LanguageExt.Effects.Database;
 using LanguageExt.Effects.Traits;
 using LinqToDB;
-using LinqToDB.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
+using LinqToDB.Data;
+using LinqToDB.Linq;
 
 public class DatabaseLive : DatabaseIO
 {
-    private readonly DbContext _dbContext;
+    private readonly DataConnection _dbc;
 
-    public DatabaseLive(DbContext dbContext) {
-        _dbContext = dbContext;
+    public DatabaseLive(DataConnection dbc) {
+        _dbc = dbc;
     }
-
-    public DbContext DbContext => _dbContext;
 
     // Add
-    public Aff<EntityEntry<TEntity>> Add<TEntity>(TEntity entity, CancellationToken token = default)
-        where TEntity : class
+    public Aff<TKey> Insert<T, TKey>(T entity, CancellationToken token = default)
+        where T : class, IEntity<TKey>
         =>
-        _dbContext.AddAsync<TEntity>(entity, token).ToAff();
-
-    public Aff<Unit> AddRange<TEntity>(Lst<TEntity> entities, CancellationToken token = default)
-        where TEntity : class
+        _dbc.InsertWithIdentityAsync<T, TKey>(entity, token: token)
+            .ToAff()
+            #pragma warning disable CS8622
+            .Map(Optional<TKey>)
+            #pragma warning restore CS8622
+            .Bind(id => id.Match(
+                Some: v => SuccessEff(v),
+                None: () => FailEff<TKey>(Error.New($"Unable to insert entity ${typeof(T).Name}"))
+            ));
+    
+    public Aff<TKey> Insert<T, TKey>(Func<IValueInsertable<T>, IValueInsertable<T>> provider, CancellationToken token = default)
+        where T : class, IEntity<TKey>
         =>
-        _dbContext.AddRangeAsync(entities, token).ToUnit().ToAff();
+        _dbc.InsertWithIdentityAsync<T, TKey>(provider(_dbc.Into<T>(_dbc.GetTable<T>())), token)
+            .ToAff()
+            #pragma warning disable CS8622
+            .Map(Optional<TKey>)
+            #pragma warning restore CS8622
+            .Bind(id => id.Match(
+                Some: v => SuccessEff(v),
+                None: () => FailEff<TKey>(Error.New($"Unable to insert entity ${typeof(T).Name}"))
+            ));
 
     // Update
-    public Eff<EntityEntry<TEntity>> Update<TEntity>(TEntity entity)
-        where TEntity : class
+    public Aff<Unit> Update<T>(T entity, CancellationToken token = default)
+        where T : class
         =>
-        SuccessEff(_dbContext.Update(entity));
-
-    public Eff<Unit> UpdateRange<TEntity>(Lst<TEntity> entities)
-        where TEntity : class {
-        _dbContext.UpdateRange(entities);
-        return unitEff;
-    }
-
-    // Attach
-    public Eff<EntityEntry<TEntity>> Attach<TEntity>(TEntity entity)
-        where TEntity : class
-        => SuccessEff(_dbContext.Attach(entity));
-
-    public Eff<EntityEntry> Attach(object entity)
-        => SuccessEff(_dbContext.Attach(entity));
-
-    public Eff<Unit> AttachRange(object[] entities) {
-        _dbContext.AttachRange(entities);
-        return unitEff;
-    }
-
-    public Eff<Unit> AttachRange(Lst<object> entities) {
-        _dbContext.AttachRange(entities);
-        return unitEff;
-    }
-
-    // Entry
-    public Eff<EntityEntry> Entry(object entity)
-        => SuccessEff(_dbContext.Entry(entity));
-
-    public Eff<EntityEntry<TEntity>> Entry<TEntity>(TEntity entity)
-        where TEntity : class
-        => SuccessEff(_dbContext.Entry(entity));
-
-    // Find
-    public Aff<Option<TEntity>> Find<TEntity>(object[] keyValues, CancellationToken token = default)
-        where TEntity : class
+        _dbc.UpdateAsync(entity, token: token)
+            .ToUnit()
+            .ToAff();
+    
+    public Aff<Unit> Update<T>(Func<ITable<T>, IUpdatable<T>> updater, CancellationToken token = default)
+        where T : class
         =>
-        #pragma warning disable CS8622
-        _dbContext.FindAsync<TEntity>(keyValues, token).ToAff().Map(Optional<TEntity>); 
-        #pragma warning restore CS8622
-
-    public Aff<Option<object>> Find(Type entityType, object[] keyValues, CancellationToken token = default)
-        =>
-        #pragma warning disable CS8622
-        _dbContext.FindAsync(entityType, keyValues, token).ToAff().Map(Optional<object>);
-        #pragma warning restore CS8622
-
-    // Expression
-    public Eff<IQueryable<TResult>> FromExpression<TResult>(Expression<Func<IQueryable<TResult>>> expression)
-        => SuccessEff(_dbContext.FromExpression(expression));
+        updater(_dbc.GetTable<T>())
+            .UpdateAsync(token)
+            .ToUnit()
+            .ToAff();
 
     // Remove
-    public Eff<EntityEntry> Remove(object entity)
-        => SuccessEff(_dbContext.Remove(entity));
-
-    public Eff<EntityEntry<TEntity>> Remove<TEntity>(TEntity entity)
-        where TEntity : class
+    public Aff<Unit> Delete<T>(Expression<Func<T, bool>> filter, CancellationToken token = default)
+        where T : class
         =>
-        SuccessEff(_dbContext.Remove(entity));
+        _dbc.GetTable<T>()
+            .Where(filter)
+            .DeleteAsync(token)
+            .ToUnit()
+            .ToAff();
 
-    public Eff<Unit> RemoveRange(object[] entities) {
-        _dbContext.RemoveRange(entities);
-        return unitEff;
-    }
-
-    public Eff<Unit> RemoveRange(Lst<object> entities) {
-        _dbContext.RemoveRange(entities);
-        return unitEff;
-    }
-
-    // SaveChanges
-    public Aff<Unit> SaveChanges(bool acceptAllChangesOnSuccess, CancellationToken token = default)
+    // Find
+    public Eff<ITable<T>> Table<T>()
+        where T : class
         =>
-        _dbContext.SaveChangesAsync(acceptAllChangesOnSuccess, token)
-                  .ToUnit()
-                  .ToAff();
+        SuccessEff(_dbc.GetTable<T>());
 
-    public Aff<Unit> SaveChanges(CancellationToken token = default)
+    public Aff<Option<T>> FindOne<T>(Expression<Func<T, bool>> filter, CancellationToken token = default)
+        where T : class
         =>
-        _dbContext.SaveChangesAsync(token)
-                  .ToUnit()
-                  .ToAff();
+        _dbc.GetTable<T>()
+            .Where(filter)
+            .FirstOrDefaultAsync(token)
+            .ToAff()
+            #pragma warning disable CS8622
+            .Map(Optional<T>);
+            #pragma warning restore CS8622
+    
+    public Aff<Arr<T>> Find<T>(Expression<Func<T, bool>> filter, CancellationToken token = default)
+        where T : class
+        =>
+        _dbc.GetTable<T>()
+            .Where(filter)
+            .ToListAsync(token)
+            .ToAff()
+            .Map(toArray);
 
-    // Query
-    public Eff<DbSet<TEntity>> Set<TEntity>(string name)
-        where TEntity : class
+    public Eff<IQueryable<A>> GetCte<T, A>(Func<ITable<T>, IQueryable<A>> builder, Option<string> name)
+        where T : class
         =>
-        SuccessEff(_dbContext.Set<TEntity>(name));
-
-    public Eff<DbSet<TEntity>> Set<TEntity>()
-        where TEntity : class
-        =>
-        SuccessEff(_dbContext.Set<TEntity>());
-
-    public Eff<ITable<TEntity>> Table<TEntity>(string name)
-        where TEntity : class
-        =>
-        SuccessEff(_dbContext.Set<TEntity>(name).ToLinqToDBTable());
-
-    public Eff<ITable<TEntity>> Table<TEntity>()
-        where TEntity : class
-        =>
-        SuccessEff(_dbContext.Set<TEntity>().ToLinqToDBTable());
-
-    // StoredProc
-    public Aff<A> StoredProc<A>(string storedProcName, Func<StoredProcQuery, Aff<A>> builder, bool prependDefaultSchema = true)
-        =>
-        _dbContext.Model
-                  .GetDefaultSchema()
-                  #pragma warning disable CS8622
-                  .Apply(Optional<string>)
-                  #pragma warning restore CS8622
-                  .Map(schemaName => prependDefaultSchema ? $"{schemaName}.{storedProcName}" : storedProcName)
-                  .IfNone(storedProcName)
-                  .Apply(spName => new StoredProcQuery(spName, _dbContext))
-                  .Apply(builder);
-
-    public Eff<IQueryable<A>> Cte<TEntity, A>(Func<ITable<TEntity>, IQueryable<A>> builder, Option<string> name)
-        where TEntity : class
-        =>
-        builder(_dbContext.Set<TEntity>().ToLinqToDBTable())
+        builder(_dbc.GetTable<T>())
             .AsCte(name.ToNullable())
+            .Apply(SuccessEff);
+
+    public Eff<IQueryable<T>> GetRecursiveCte<T>(Func<IQueryable<T>, IQueryable<T>> body, Option<string> name)
+        where T : class
+        =>
+        _dbc.GetCte<T>(body, name.ToNullable())
             .Apply(SuccessEff);
 }
