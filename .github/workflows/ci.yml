@@ -8,7 +8,6 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -23,18 +22,24 @@ jobs:
       run: dotnet build src --no-restore
     - name: Pack
       run: dotnet pack src -c Release -o ./artifacts/bin
+    - name: Archive production artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: dist
+        path: ./artifacts/bin
 
   deploy:
-
     runs-on: ubuntu-latest
-
+    needs: build
     env:
       APIKEY: ${{ secrets.NUGET_API_KEY }}
 
-    environment:
-      name: Deploy
-
     steps:
+    - name: Download a single artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: dist
+        path: ./artifacts/bin
     - name: Nuget
       run: dotnet nuget push ./artifacts/bin/*.nupkg --api-key "$APIKEY" --source https://api.nuget.org/v3/index.json
 
