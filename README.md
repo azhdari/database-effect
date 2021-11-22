@@ -20,22 +20,6 @@ dotnet add package LanguageExt.Effects.Database
 ```
 Use the `--prerelease` option to install latest preview version.
 
-### Approach A. Global connection
-Add this line to your project's startup file:
-```csharp
-services.AddDatabaseEff(Configuration, "ConnectionStringName");
-```
-
-### Approach B. Configure Multiple DataContext
-You can use `OptionBuilder` to configure multiple `DataContext`:
-```csharp
-var fooOptionBuilder = services.GetDatabaseBuildOptions(Configuration, "FooConnectionString");
-builder.Services.AddLinqToDbContext<FooDbContext>(options);
-
-var barOptionBuilder = services.GetDatabaseBuildOptions(Configuration, "BarConnectionString");
-builder.Services.AddLinqToDbContext<BarDbContext>(options);
-```
-
 ---
 
 ## Documentation
