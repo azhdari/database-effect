@@ -4,7 +4,7 @@ public static class Extensions
 {
     public static A? ToNullable<A>(this Option<A> option)
         =>
-        option.Match<A?>(
+        option.MatchUnsafe<A?>(
             Some: v => v,
             None: () => default
         );
