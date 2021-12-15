@@ -46,25 +46,36 @@ public static class Linq2Db
         return res;
     }
 
-    public static async Task<Guid> InsertWithGuidIdentityAsync<T>(this ITable<T> target, Expression<Func<T>> setter, CancellationToken token = default)
+    public static async Task<Guid?> InsertWithGuidIdentityAsync<T>(this ITable<T> target, Expression<Func<T>> setter, CancellationToken token = default)
         where T : notnull,
                   IEntity<Guid> {
         var idObj = await target.InsertWithIdentityAsync(setter, token);
         if (idObj is not null && Guid.TryParse(idObj.ToString(), out var id)) {
             return id;
         } else {
-            return Guid.Empty;
+            return default;
         }
     }
 
-    public static async Task<Guid> InsertWithGuidIdentityAsync<T>(this IDataContext dataContext, T obj, string? tableName = null, string? databaseName = null, string? schemaName = null, string? serverName = null, TableOptions tableOptions = TableOptions.NotSet, CancellationToken token = default)
+    public static async Task<Guid?> InsertWithGuidIdentityAsync<T>(this IDataContext _, IValueInsertable<T> provider, CancellationToken token = default)
+        where T : notnull,
+                  IEntity<Guid> {
+        var idObj = await provider.InsertWithIdentityAsync(token);
+        if (idObj is not null && Guid.TryParse(idObj.ToString(), out var id)) {
+            return id;
+        } else {
+            return default;
+        }
+    }
+
+    public static async Task<Guid?> InsertWithGuidIdentityAsync<T>(this IDataContext dataContext, T obj, string? tableName = null, string? databaseName = null, string? schemaName = null, string? serverName = null, TableOptions tableOptions = TableOptions.NotSet, CancellationToken token = default)
         where T : notnull,
                   IEntity<Guid> {
         var idObj = await dataContext.InsertWithIdentityAsync(obj, tableName, databaseName, schemaName, serverName, tableOptions, token);
         if (idObj is not null && Guid.TryParse(idObj.ToString(), out var id)) {
             return id;
         } else {
-            return Guid.Empty;
+            return default;
         }
     }
 

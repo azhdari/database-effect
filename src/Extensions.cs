@@ -2,10 +2,8 @@ namespace LanguageExt.Effects.Database;
 
 public static class Extensions
 {
-    public static A? ToNullable<A>(this Option<A> option)
+    public static T? ToNullable<T>(this Option<T> maybe)
+        where T: class
         =>
-        option.MatchUnsafe<A?>(
-            Some: v => v,
-            None: () => default
-        );
+        maybe.Case is T some ? some : null;
 }

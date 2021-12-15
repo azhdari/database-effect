@@ -9,6 +9,10 @@ public interface DatabaseIO
 {
     Aff<TKey> Insert<T, TKey>(T entity, CancellationToken token = default) where T : class, IEntity<TKey>;
     Aff<TKey> Insert<T, TKey>(Func<IValueInsertable<T>, IValueInsertable<T>> provider, CancellationToken token = default) where T : class, IEntity<TKey>;
+
+    Aff<Guid> InsertGuid<T>(T entity, CancellationToken token = default) where T : class, IEntity<Guid>;
+    Aff<Guid> InsertGuid<T>(Func<IValueInsertable<T>, IValueInsertable<T>> provider, CancellationToken token = default) where T : class, IEntity<Guid>;
+
     Aff<Unit> Update<T>(T entity, CancellationToken token = default) where T : class;
     Aff<Unit> Update<T>(Func<ITable<T>, IUpdatable<T>> updater, CancellationToken token = default) where T : class;
     Aff<Unit> Delete<T>(Expression<Func<T, bool>> filter, CancellationToken token = default) where T : class;

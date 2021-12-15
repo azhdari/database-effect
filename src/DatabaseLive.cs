@@ -42,6 +42,32 @@ public class DatabaseLive : DatabaseIO
                 Some: v => SuccessEff(v),
                 None: () => FailEff<TKey>(Error.New($"Unable to insert entity ${typeof(T).Name}"))
             ));
+    
+    public Aff<Guid> InsertGuid<T>(T entity, CancellationToken token = default)
+        where T : class, IEntity<Guid>
+        =>
+        _dbc.InsertWithGuidIdentityAsync<T>(entity, token: token)
+            .ToAff()
+            #pragma warning disable CS8622
+            .Map(Optional<Guid>)
+            #pragma warning restore CS8622
+            .Bind(id => id.Match(
+                Some: v => SuccessEff(v),
+                None: () => FailEff<Guid>(Error.New($"Unable to insert entity ${typeof(T).Name}"))
+            ));
+    
+    public Aff<Guid> InsertGuid<T>(Func<IValueInsertable<T>, IValueInsertable<T>> provider, CancellationToken token = default)
+        where T : class, IEntity<Guid>
+        =>
+        _dbc.InsertWithGuidIdentityAsync<T>(provider(_dbc.Into<T>(_dbc.GetTable<T>())), token)
+            .ToAff()
+            #pragma warning disable CS8622
+            .Map(Optional<Guid>)
+            #pragma warning restore CS8622
+            .Bind(id => id.Match(
+                Some: v => SuccessEff(v),
+                None: () => FailEff<Guid>(Error.New($"Unable to insert entity ${typeof(T).Name}"))
+            ));
 
     // Update
     public Aff<Unit> Update<T>(T entity, CancellationToken token = default)
@@ -98,9 +124,10 @@ public class DatabaseLive : DatabaseIO
     public Eff<IQueryable<A>> GetCte<T, A>(Func<ITable<T>, IQueryable<A>> builder, Option<string> name)
         where T : class
         =>
-        builder(_dbc.GetTable<T>())
-            .AsCte(name.ToNullable())
-            .Apply(SuccessEff);
+        name.Match(
+            Some:  n => builder(_dbc.GetTable<T>()).AsCte(n).Apply(SuccessEff),
+            None: () => builder(_dbc.GetTable<T>()).AsCte().Apply(SuccessEff)
+        );
 
     public Eff<IQueryable<T>> GetRecursiveCte<T>(Func<IQueryable<T>, IQueryable<T>> body, Option<string> name)
         where T : class
