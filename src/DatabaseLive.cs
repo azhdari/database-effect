@@ -107,11 +107,10 @@ public class DatabaseLive : DatabaseIO
         _dbc.GetTable<T>()
             .Where(filter)
             .FirstOrDefaultAsync(token)
-            .ToAff()
-            #pragma warning disable CS8622
-            .Map(Optional<T>);
-            #pragma warning restore CS8622
-    
+            .ContinueWith(prev => prev.Map(v => v is null ? Option<T>.None : Option<T>.Some(v)))
+            .Flatten()
+            .ToAff();
+
     public Aff<Arr<T>> Find<T>(Expression<Func<T, bool>> filter, CancellationToken token = default)
         where T : class
         =>
