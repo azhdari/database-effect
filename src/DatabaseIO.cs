@@ -19,6 +19,9 @@ public interface DatabaseIO
     Aff<Option<T>> FindOne<T>(Expression<Func<T, bool>> filter, CancellationToken token = default) where T : class;
     Aff<Arr<T>> Find<T>(Expression<Func<T, bool>> filter, CancellationToken token = default) where T : class;
 
+    Aff<int> Count<T>(Func<ITable<T>, IQueryable<T>> query, CancellationToken token = default) where T : class;
+    Aff<DataAndCount<T>> FindAndCount<T>(DataLimit limit, Func<IQueryable<T>, IQueryable<T>> query, CancellationToken token = default) where T : class;
+
     Eff<ITable<T>> Table<T>() where T : class;
     Eff<IQueryable<A>> GetCte<T, A>(Func<ITable<T>, IQueryable<A>> body, Option<string> name) where T : class;
     Eff<IQueryable<T>> GetRecursiveCte<T>(Func<IQueryable<T>, IQueryable<T>> body, Option<string> name) where T : class;

@@ -120,6 +120,32 @@ public class DatabaseLive : DatabaseIO
             .ToAff()
             .Map(toArray);
 
+    public Aff<int> Count<T>(Func<ITable<T>, IQueryable<T>> query, CancellationToken token = default)
+        where T : class
+        =>
+        _dbc.GetTable<T>()
+            .Apply(query)
+            .CountAsync(token)
+            .ToAff();
+
+    public Aff<DataAndCount<T>> FindAndCount<T>(DataLimit limit, Func<IQueryable<T>, IQueryable<T>> query, CancellationToken token = default)
+        where T : class
+        =>
+        from cte    in GetCte<T, T>(table => query(table), "cte")
+        from data   in cte.IfElse(
+                               () => limit.SortDir == SortDir.asc,
+                               q  => q.OrderBy(p => Sql.Property<object>(p, limit.SortBy)),
+                               q  => q.OrderByDescending(p => Sql.Property<object>(p, limit.SortBy))
+                           )
+                          .Skip(limit.Skip)
+                          .Take(limit.Take)
+                          .ToListAsync(token)
+                          .ToAff()
+                          .Map(toArray)
+        from count  in cte.CountAsync(token)
+                          .ToAff()
+        select new DataAndCount<T>(data, count);
+
     public Eff<IQueryable<A>> GetCte<T, A>(Func<ITable<T>, IQueryable<A>> builder, Option<string> name)
         where T : class
         =>

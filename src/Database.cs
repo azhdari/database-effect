@@ -85,12 +85,16 @@ public static class Database<R>
         where T : class
         =>
         default(R).Database.Bind(rt => rt.Update<T>(updater, token));
-
+    
+    // /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Delete
     public static Aff<R, Unit> Delete<T>(Expression<Func<T, bool>> filter, CancellationToken token = default)
         where T : class
         =>
         default(R).Database.Bind(rt => rt.Delete<T>(filter, token));
-
+    
+    // /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Select
     public static Aff<R, Option<T>> FindOne<T>(Expression<Func<T, bool>> filter, CancellationToken token = default)
         where T : class
         =>
@@ -100,6 +104,16 @@ public static class Database<R>
         where T : class
         =>
         default(R).Database.Bind(rt => rt.Find<T>(filter, token));
+
+    public static Aff<R, int> Count<T>(Func<ITable<T>, IQueryable<T>> query, CancellationToken token = default)
+        where T : class
+        =>
+        default(R).Database.Bind(rt => rt.Count<T>(query, token));
+
+    public static Aff<R, DataAndCount<T>> FindAndCount<T>(DataLimit limit, Func<IQueryable<T>, IQueryable<T>> query, CancellationToken token = default)
+        where T : class
+        =>
+        default(R).Database.Bind(rt => rt.FindAndCount<T>(limit, query, token));
 
     public static Aff<R, Arr<A>> Find<T, A>(Func<ITable<T>, IQueryable<A>> filter, CancellationToken token = default)
         where T : class
