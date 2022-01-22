@@ -1,4 +1,5 @@
 // ReSharper disable once CheckNamespace
+
 namespace LanguageExt.Effects.Database;
 
 using System.Linq;
@@ -150,40 +151,38 @@ public class DatabaseLive : DatabaseIO
                 ToAff();
 
     public Aff<DataAndCount<T>> FindAndCount<T>(
+        IQueryable<T> query,
         DataLimit limit,
-        Func<IQueryable<T>, IQueryable<T>> query,
         CancellationToken token = default
+    )
+        where T : class {
+        var sortedQuery = limit.SortDir == SortDir.asc
+            ? query.OrderBy(p => Sql.Property<object>(p, limit.SortBy))
+            : query.OrderByDescending(p => Sql.Property<object>(p, limit.SortBy));
+
+        var (data, totalRecords) = QueryPaginator.Paginate(sortedQuery, limit.Skip, limit.Take, token);
+        return SuccessAff(new DataAndCount<T>(data.ToArr(), totalRecords));
+    }
+
+    public Eff<IQueryable<A>> GetCte<T, A>(
+        Func<IQueryable<T>, IQueryable<A>> builder,
+        Option<string> name
     )
         where T : class
         =>
-            from cte    in GetCte(query, "cte")
-            from data   in cte.IfElse(
-                    () => limit.SortDir == SortDir.asc,
-                    q  => q.OrderBy(p => Sql.Property<object>(p, limit.SortBy)),
-                    q  => q.OrderByDescending(p => Sql.Property<object>(p, limit.SortBy))
-                ).
-                Skip(limit.Skip).
-                Take(limit.Take).
-                ToListAsync(token).
-                ToAff().
-                Map(toArray)
-            from count  in cte.CountAsync(token).
-                ToAff()
-            select new DataAndCount<T>(data, count);
-
-    public Eff<IQueryable<A>> GetCte<T, A>(Func<ITable<T>, IQueryable<A>> builder, Option<string> name)
-        where T : class
-        =>
             name.Match(
-                Some:  n => builder(_dbc.GetTable<T>()).
+                n => builder(_dbc.GetTable<T>()).
                     AsCte(n).
                     Apply(SuccessEff),
-                None: () => builder(_dbc.GetTable<T>()).
+                () => builder(_dbc.GetTable<T>()).
                     AsCte().
                     Apply(SuccessEff)
             );
 
-    public Eff<IQueryable<T>> GetRecursiveCte<T>(Func<IQueryable<T>, IQueryable<T>> body, Option<string> name)
+    public Eff<IQueryable<T>> GetRecursiveCte<T>(
+        Func<IQueryable<T>, IQueryable<T>> body,
+        Option<string> name
+    )
         where T : class
         =>
             _dbc.GetCte(body, name.ToNullable()).

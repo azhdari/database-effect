@@ -1,4 +1,5 @@
 // ReSharper disable once CheckNamespace
+
 namespace LanguageExt.Effects.Traits;
 
 using System;
@@ -191,15 +192,29 @@ public static class Database<R>
             );
 
     public static Aff<R, DataAndCount<T>> FindAndCount<T>(
-        DataLimit limit,
-        Func<IQueryable<T>, IQueryable<T>> query
+        IQueryable<T> query,
+        DataLimit limit
     )
         where T : class
         =>
             default(R).Database.Bind(
                 rt =>
                     from cancelToken in cancelToken<R>()
-                    from result in rt.FindAndCount(limit, query, cancelToken)
+                    from result in rt.FindAndCount(query, limit, cancelToken)
+                    select result
+            );
+
+    public static Aff<R, DataAndCount<T>> FindAndCount<T>(
+        Func<IQueryable<T>, IQueryable<T>> query,
+        DataLimit limit
+    )
+        where T : class
+        =>
+            default(R).Database.Bind(
+                rt =>
+                    from table in Table<T>()
+                    from cancelToken in cancelToken<R>()
+                    from result in rt.FindAndCount<T>(query(table), limit, cancelToken)
                     select result
             );
 
@@ -222,7 +237,10 @@ public static class Database<R>
         =>
             default(R).Database.Bind(rt => rt.Table<T>());
 
-    public static Aff<R, IQueryable<A>> GetCte<T, A>(Func<ITable<T>, IQueryable<A>> body, Option<string> name = default)
+    public static Aff<R, IQueryable<A>> GetCte<T, A>(
+        Func<IQueryable<T>, IQueryable<A>> body,
+        Option<string> name = default
+    )
         where T : class
         =>
             default(R).Database.Bind(rt => rt.GetCte(body, name));

@@ -1,9 +1,11 @@
+// ReSharper disable once CheckNamespace
+
 namespace LanguageExt.Effects.Traits;
 
-using System.Linq.Expressions;
-using LanguageExt.Effects.Database;
+using Database;
 using LinqToDB;
 using LinqToDB.Linq;
+using System.Linq.Expressions;
 
 public interface DatabaseIO
 {
@@ -41,8 +43,8 @@ public interface DatabaseIO
         where T : class;
 
     Aff<DataAndCount<T>> FindAndCount<T>(
+        IQueryable<T> query,
         DataLimit limit,
-        Func<IQueryable<T>, IQueryable<T>> query,
         CancellationToken token = default
     )
         where T : class;
@@ -50,7 +52,10 @@ public interface DatabaseIO
     Eff<ITable<T>> Table<T>()
         where T : class;
 
-    Eff<IQueryable<A>> GetCte<T, A>(Func<ITable<T>, IQueryable<A>> body, Option<string> name)
+    Eff<IQueryable<A>> GetCte<T, A>(
+        Func<IQueryable<T>, IQueryable<A>> body,
+        Option<string> name
+    )
         where T : class;
 
     Eff<IQueryable<T>> GetRecursiveCte<T>(Func<IQueryable<T>, IQueryable<T>> body, Option<string> name)
