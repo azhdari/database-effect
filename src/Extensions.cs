@@ -31,4 +31,12 @@ public static class Extensions
             Some:  a => query.Where(filter(a)),
             None: () => query
             );
+
+    public static IOrderedQueryable<T> Sort<T>(this IQueryable<T> query, string fieldName, SortDir direction)
+        =>
+            query.IfElse(
+                () => direction == SortDir.asc,
+                q  => q.OrderBy(p => Sql.Property<object>(p, fieldName)),
+                q  => q.OrderByDescending(p => Sql.Property<object>(p, fieldName))
+            );
 }
