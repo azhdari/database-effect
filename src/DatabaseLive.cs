@@ -21,12 +21,10 @@ public class DatabaseLive : DatabaseIO
         where T : class, IEntity<TKey>
         =>
             _dbc.InsertWithIdentityAsync<T, TKey>(entity, token: token).
-                ToAff()
+                ToAff().
 #pragma warning disable CS8622
-                .
-                Map(Optional<TKey>)
+                Map(Optional<TKey>).
 #pragma warning restore CS8622
-                .
                 Bind(
                     id => id.Match(
                         SuccessEff,
@@ -41,12 +39,10 @@ public class DatabaseLive : DatabaseIO
         where T : class, IEntity<TKey>
         =>
             _dbc.InsertWithIdentityAsync<T, TKey>(provider(_dbc.Into(_dbc.GetTable<T>())), token).
-                ToAff()
+                ToAff().
 #pragma warning disable CS8622
-                .
-                Map(Optional<TKey>)
+                Map(Optional<TKey>).
 #pragma warning restore CS8622
-                .
                 Bind(
                     id => id.Match(
                         SuccessEff,
@@ -58,12 +54,10 @@ public class DatabaseLive : DatabaseIO
         where T : class, IEntity<Guid>
         =>
             _dbc.InsertWithGuidIdentityAsync(entity, token: token).
-                ToAff()
+                ToAff().
 #pragma warning disable CS8622
-                .
-                Map(Optional<Guid>)
+                Map(Optional<Guid>).
 #pragma warning restore CS8622
-                .
                 Bind(
                     id => id.Match(
                         SuccessEff,
@@ -78,12 +72,10 @@ public class DatabaseLive : DatabaseIO
         where T : class, IEntity<Guid>
         =>
             _dbc.InsertWithGuidIdentityAsync(provider(_dbc.Into(_dbc.GetTable<T>())), token).
-                ToAff()
+                ToAff().
 #pragma warning disable CS8622
-                .
-                Map(Optional<Guid>)
+                Map(Optional<Guid>).
 #pragma warning restore CS8622
-                .
                 Bind(
                     id => id.Match(
                         SuccessEff,
