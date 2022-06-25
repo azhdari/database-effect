@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <PackageVersion>1.0.0-preview9</PackageVersion>
+    <PackageVersion>1.0.0-preview10</PackageVersion>
     <PackageId>LanguageExt.Effects.Database</PackageId>
     <Title>LanguageExt.Effects.Database</Title>
     <Authors>Mohammad Azhdari</Authors>
